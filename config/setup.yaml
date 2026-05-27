@@ -6,7 +6,7 @@ containers:
   awscli: 
     dockerhub: "docker://amazon/aws-cli"
     version: "2.34.46"
-    digest: "sha256:c9756d3e11fdfc02497e980c1cb94c678c31b6e38c93f6443291e52f71493720"
+    digest: "@sha256:c9756d3e11fdfc02497e980c1cb94c678c31b6e38c93f6443291e52f71493720"
 
 resources:
   chr15.vg: "s3://human-pangenomics/pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.1-mc-grch38/hprc-v1.1-mc-grch38.chroms/chr15.vg"

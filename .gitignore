@@ -2,3 +2,6 @@ data/*bam
 data/*q.gz
 *.pyc
 */.snakemake/*
+envs/*.sif
+reference/*vg
+envs/version.yaml

@@ -21,7 +21,7 @@ rule get_hprc_chr15:
 
     shell:
         """
-        aws s3 cp {params} {output} --checksum-mode ENABLED --no-sign-requestz
+        aws s3 cp {params} {output} --checksum-mode ENABLED --no-sign-request
         """
 
 rule build_container_images:
