@@ -1,0 +1,13 @@
+containers:
+  vg: 
+    dockerhub: "docker://quay.io/vgteam/vg"
+    version: "v1.73.0"
+    digest: "@sha256:92c1d3e9e8050de6fe014a68cddbbd8b55d48868394a6a86a6b6e1163e8a3d27"
+  awscli: 
+    dockerhub: "docker://amazon/aws-cli"
+    version: "2.34.46"
+    digest: "sha256:c9756d3e11fdfc02497e980c1cb94c678c31b6e38c93f6443291e52f71493720"
+
+resources:
+  chr15.vg: "s3://human-pangenomics/pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.1-mc-grch38/hprc-v1.1-mc-grch38.chroms/chr15.vg"
+  

@@ -1,0 +1,10 @@
+IO:
+  input : "/Users/nikolail_dev/repos/BGRSSB2026/data/"
+  output : "/Users/nikolail_dev/repos/BGRSSB2026/output/"
+  utils : "/Users/nikolail_dev/repos/BGRSSB2026/utils/"
+  envs : "/Users/nikolail_dev/repos/BGRSSB2026/envs/"
+  samplestsv : "/Users/nikolail_dev/repos/BGRSSB2026/config/samples.tsv"
+  targetRegions : "/Users/nikolail_dev/repos/BGRSSB2026/metadata/target.GRCh38.p14.ENSEMBL.bed"
+
+resources:
+  jobs : "24"

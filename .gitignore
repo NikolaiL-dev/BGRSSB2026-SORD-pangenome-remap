@@ -1,0 +1,4 @@
+data/*bam
+data/*q.gz
+*.pyc
+*/.snakemake/*

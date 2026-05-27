@@ -1,0 +1,118 @@
+# [TODO] config processor
+if len(config) == 0:
+    configfile: "config.yaml"
+
+
+from pathlib import Path
+from sys import path as syspath
+syspath.append(config["IO"]["utils"])
+import smk_io
+
+# ----
+INPUT = config["IO"]["input"].rstrip('/')
+OUTPUT = config["IO"]["output"].rstrip('/')
+ENVS = config["IO"]["envs"].rstrip('/')
+SAMPLES = smk_io.read_samples_tab(config["IO"]["samplestsv"])
+SAMPLES_PE = [sid for sid in SAMPLES.keys() if SAMPLES[sid]["LIB"] == "PE"]
+SAMPLES_SE = [sid for sid in SAMPLES.keys() if SAMPLES[sid]["LIB"] == "SE"]
+TARGET_REGIONS = config["IO"]["targetRegions"]
+
+JOBS = config["resources"]["jobs"]
+# ----
+
+rule all:
+    input: 
+        OUTPUT + "/.progress/inited",
+        OUTPUT + "/.progress/all.finished"
+
+rule Sumup:
+    input: 
+        expand(OUTPUT + "/.progress/{sample_pe}.pe.finished", sample_pe=SAMPLES_PE),
+        expand(OUTPUT + "/.progress/{sample_se}.se.finished", sample_se=SAMPLES_SE),
+        expand(OUTPUT + "/workflow/{sample_se}/{sample_se}.fq.gz", sample_se=SAMPLES_SE),
+        expand(OUTPUT + "/workflow/{sample_pe}/{sample_pe}_R1.fq.gz", sample_pe=SAMPLES_PE),
+        expand(OUTPUT + "/workflow/{sample_pe}/{sample_pe}_R2.fq.gz", sample_pe=SAMPLES_PE)
+    output:
+        OUTPUT + "/.progress/all.finished"
+    shell: "touch {output}"
+
+rule GetTargetReadsFromBam_PE:
+    input:
+        OUTPUT + "/.progress/inited",
+        bam=lambda wildcards: SAMPLES[wildcards.sample]['BAM']
+    container: ENVS + "/vg.sif"
+    threads: 4
+    params: 
+        bed = TARGET_REGIONS,
+        qnames = OUTPUT + "/workflow/{sample}/{sample}.qnames.txt",
+        tmp_dir = OUTPUT + "/workflow/tmp/{sample}",
+        wd = OUTPUT + "/workflow/{sample}/",
+        ssBAM = OUTPUT + "/workflow/{sample}/{sample}.ss.bam"
+    output:
+        done = OUTPUT + "/.progress/{sample}.pe.finished",
+        R1 = temp(OUTPUT + "/workflow/{sample}/{sample}_R1.fq.gz"),
+        R2 = temp(OUTPUT + "/workflow/{sample}/{sample}_R2.fq.gz")
+
+    priority: 10
+
+    shell:
+        """
+        set -euo pipefail
+
+        mkdir -p {params.wd} {params.tmp_dir}
+        # candidate discovery
+        samtools view -@ {threads} -F 3328 -L {params.bed} {input.bam} \
+            | cut -f1 \
+            | sort -u > {params.qnames}
+        
+        # extract reads by their names
+        samtools view -bh -@ {threads} -F 3328 -N {params.qnames} {input.bam} > {params.ssBAM}
+
+        # bam -> fq
+        samtools collate -@ {threads} -l 1 -T {params.tmp_dir} -O {params.ssBAM} \
+            | samtools fastq -@ {threads} -1 {output.R1} -2 {output.R2} -s /dev/null -n -0 /dev/null -
+
+        touch {output.done}
+        """
+
+rule GetTargetReadsFromBam_SE:
+    input: 
+        OUTPUT + "/.progress/inited",
+        bam=lambda wildcards: SAMPLES[wildcards.sample]['BAM']
+    container: ENVS + "/vg.sif"
+    threads: 4
+    params: 
+        bed = TARGET_REGIONS,
+        wd = OUTPUT + "/workflow/{sample}/",
+        ssBAM = OUTPUT + "/workflow/{sample}/{sample}.ss.bam"
+    output:
+        OUTPUT + "/.progress/{sample}.se.finished",
+        R = temp(OUTPUT + "/workflow/{sample}/{sample}.fq.gz")
+
+    priority: 10
+
+    shell:
+        """
+        set -euo pipefail
+
+        mkdir -p {params.wd}
+        # candidate discovery
+        samtools view -@ {threads} -bh -F 3328 -L {params.bed} {input.bam} > {params.ssBAM}
+
+        # bam -> fq
+        samtools fastq -@ {threads} -n -0 /dev/null -o {output.R} {params.ssBAM}
+        rm {params.ssBAM}
+        """ 
+
+#rule Map2Pangenome_PE:
+    
+
+#rule Map2Pangenome_SE:
+
+
+rule init:
+    output: OUTPUT + "/.progress/inited"
+    run:
+        assert Path(INPUT).is_dir(), f'[ERROR] The input directory does not exist: {INPUT}'
+        shell("mkdir -p {OUTPUT}/.progress {OUTPUT}/workflow/tmp")
+        shell("touch {output}")
